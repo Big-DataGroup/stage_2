@@ -1,0 +1,196 @@
+
+openapi: 3.0.3
+
+info:
+  title: Ingestion Service API
+  description: >
+    API for downloading books from Project Gutenberg,
+    separating book headers and bodies, and storing
+    them in the datalake.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:7001
+    description: Local Ingestion Service
+
+tags:
+  - name: Health
+    description: Service health check
+  - name: Ingestion
+    description: Book ingestion and availability
+
+paths:
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Check service health
+      description: Checks whether the Ingestion Service is running.
+      responses:
+        "200":
+          description: Service is running
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Ingestion Service is running
+
+  /ingest/{book_id}:
+    post:
+      tags:
+        - Ingestion
+      summary: Ingest a book
+      description: >
+        Downloads a book from Project Gutenberg,
+        separates its header and body, and stores both
+        files in the datalake. The book is marked as
+        available only after storage succeeds.
+        If the book is already available, it is not
+        downloaded again.
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          description: Positive Project Gutenberg book identifier.
+          schema:
+            type: integer
+            minimum: 1
+          example: 1342
+      responses:
+        "200":
+          description: Book successfully downloaded or already available
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  book_id:
+                    type: integer
+                    example: 1342
+                  status:
+                    type: string
+                    example: downloaded
+                  path:
+                    type: string
+                    example: by_book/1342
+              example:
+                book_id: 1342
+                status: downloaded
+                path: by_book/1342
+
+        "400":
+          description: Invalid book identifier
+          content:
+            text/plain:
+              schema:
+                type: string
+              examples:
+                invalidNumber:
+                  value: Invalid book ID. It must be a number.
+                nonPositive:
+                  value: Book ID must be a positive number
+
+        "404":
+          description: Book not found on Project Gutenberg
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Book 999999 was not found on Project Gutenberg
+
+        "502":
+          description: Error communicating with Project Gutenberg
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Error communicating with Project Gutenberg
+
+        "500":
+          description: Internal error during download or storage
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Storage error
+
+  /ingest/status/{book_id}:
+    get:
+      tags:
+        - Ingestion
+      summary: Check book availability
+      description: Returns whether a book has been successfully ingested.
+      parameters:
+        - name: book_id
+          in: path
+          required: true
+          description: Positive Project Gutenberg book identifier.
+          schema:
+            type: integer
+            minimum: 1
+          example: 1342
+      responses:
+        "200":
+          description: Book availability information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  book_id:
+                    type: integer
+                    example: 1342
+                  status:
+                    type: string
+                    enum:
+                      - available
+                      - not_available
+                    example: available
+              examples:
+                available:
+                  value:
+                    book_id: 1342
+                    status: available
+                notAvailable:
+                  value:
+                    book_id: 9999
+                    status: not_available
+
+        "400":
+          description: Invalid book identifier
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Invalid book ID. It must be a number.
+
+  /ingest/list:
+    get:
+      tags:
+        - Ingestion
+      summary: List ingested books
+      description: Returns the identifiers of all successfully ingested books.
+      responses:
+        "200":
+          description: List of ingested books
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 2
+                  books:
+                    type: array
+                    items:
+                      type: integer
+                    example:
+                      - 84
+                      - 1342
+              example:
+                count: 2
+                books:
+                  - 84
+                  - 1342
