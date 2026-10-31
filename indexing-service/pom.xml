@@ -9,6 +9,7 @@
         <groupId>org.ulpgc.bigdata</groupId>
         <artifactId>stage_2_search_engine</artifactId>
         <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <!-- Nombre de este microservicio -->
@@ -29,7 +30,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>2.0.9</version>
+            <version>2.0.12</version>
         </dependency>
     </dependencies>
 
@@ -42,7 +43,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.groupname.indexing.App</mainClass>
+                            <mainClass>org.ulpgc.bigdata.indexing.App</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
