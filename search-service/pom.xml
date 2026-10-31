@@ -42,7 +42,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.groupname.indexing.App</mainClass>
+                            <mainClass>org.ulpgc.bigdata.indexing.App</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
