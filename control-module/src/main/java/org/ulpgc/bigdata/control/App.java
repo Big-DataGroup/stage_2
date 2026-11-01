@@ -1,8 +1,10 @@
+
 package org.ulpgc.bigdata.control;
 
 import io.javalin.Javalin;
 import org.ulpgc.bigdata.control.client.IngestionClient;
-import org.ulpgc.bigdata.control.service.IngestionService;
+import org.ulpgc.bigdata.control.client.IndexingClient;
+import org.ulpgc.bigdata.control.service.BookProcessingService;
 
 public class App {
 
@@ -13,23 +15,27 @@ public class App {
                 System.getenv().getOrDefault("CONTROL_PORT", "7000")
         );
 
-        // Create the HTTP client
+        // Create HTTP clients
         IngestionClient ingestionClient = new IngestionClient();
+        IndexingClient indexingClient = new IndexingClient();
 
-        // Create the ingestion service
-        IngestionService ingestionService =
-                new IngestionService(ingestionClient);
+        // Create the book processing service
+        BookProcessingService bookProcessingService =
+                new BookProcessingService(
+                        ingestionClient,
+                        indexingClient
+                );
 
         // Create the HTTP server
         Javalin app = Javalin.create();
 
-        // Register the health endpoint
+        // Health endpoint
         app.get("/health", ctx -> {
             ctx.status(200);
             ctx.result("Control Module is running");
         });
 
-        // Register the book ingestion endpoint
+        // Process and index a book
         app.post("/books/{book_id}/ingest", ctx -> {
 
             try {
@@ -37,7 +43,8 @@ public class App {
                         ctx.pathParam("book_id")
                 );
 
-                var response = ingestionService.ingestBook(bookId);
+                var response =
+                        bookProcessingService.processBook(bookId);
 
                 ctx.status(response.statusCode());
                 ctx.result(response.body());
@@ -57,7 +64,9 @@ public class App {
 
             } catch (Exception e) {
                 ctx.status(502);
-                ctx.result("Could not process the ingestion request");
+                ctx.result(
+                        "Could not process and index the book"
+                );
             }
         });
 

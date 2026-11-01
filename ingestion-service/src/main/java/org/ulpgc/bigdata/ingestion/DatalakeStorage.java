@@ -9,6 +9,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.nio.file.NoSuchFileException;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 public class DatalakeStorage {
 
@@ -68,6 +71,74 @@ public class DatalakeStorage {
         }
     }
 
+
+    public GutenbergClient.BookText read(int bookId) throws IOException {
+
+        if (bookId <= 0) {
+            throw new IllegalArgumentException(
+                    "Book ID must be a positive number"
+            );
+        }
+
+        Path bookDirectory;
+
+        if ("by_time".equals(strategy)) {
+
+            Path timeDirectory = rootDirectory.resolve("by_time");
+
+            if (!Files.exists(timeDirectory)) {
+                throw new NoSuchFileException(
+                        "Book not found: " + bookId
+                );
+            }
+
+            try (Stream<Path> directories = Files.walk(timeDirectory)) {
+
+                Optional<Path> directory = directories
+                        .filter(Files::isDirectory)
+                        .filter(path ->
+                                Files.exists(path.resolve(bookId + ".header.txt"))
+                                        && Files.exists(path.resolve(bookId + ".body.txt"))
+                        )
+                        .findFirst();
+
+                bookDirectory = directory.orElseThrow(
+                        () -> new NoSuchFileException(
+                                "Book not found: " + bookId
+                        )
+                );
+            }
+
+        } else {
+            bookDirectory = getBookDirectory(bookId);
+        }
+
+        Path headerFile = bookDirectory.resolve(
+                bookId + ".header.txt"
+        );
+
+        Path bodyFile = bookDirectory.resolve(
+                bookId + ".body.txt"
+        );
+
+        if (!Files.exists(headerFile) || !Files.exists(bodyFile)) {
+            throw new NoSuchFileException(
+                    "Book not found: " + bookId
+            );
+        }
+
+        String header = Files.readString(
+                headerFile,
+                StandardCharsets.UTF_8
+        );
+
+        String body = Files.readString(
+                bodyFile,
+                StandardCharsets.UTF_8
+        );
+
+        return new GutenbergClient.BookText(header, body);
+    }
     private void moveFile(Path source, Path destination)
             throws IOException {
 

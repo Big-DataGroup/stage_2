@@ -6,7 +6,6 @@ import io.javalin.Javalin;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -87,6 +86,52 @@ public class IngestionController {
             } catch (IOException e) {
                 ctx.status(500);
                 ctx.result("Storage error: " + e.getMessage());
+            }
+        });
+
+        // GET: Retrieve book content
+        app.get("/ingest/content/{book_id}", ctx -> {
+
+            int bookId;
+
+            try {
+                bookId = Integer.parseInt(
+                        ctx.pathParam("book_id")
+                );
+
+                if (bookId <= 0) {
+                    ctx.status(400);
+                    ctx.result("Book ID must be a positive number");
+                    return;
+                }
+
+            } catch (NumberFormatException e) {
+                ctx.status(400);
+                ctx.result("Invalid book ID. It must be a number.");
+                return;
+            }
+
+            if (!repository.isAvailable(bookId)) {
+                ctx.status(404);
+                ctx.result("Book not found: " + bookId);
+                return;
+            }
+
+            try {
+                GutenbergClient.BookText book = storage.read(bookId);
+
+                ctx.status(200);
+                ctx.json(Map.of(
+                        "book_id", bookId,
+                        "header", book.header(),
+                        "body", book.body()
+                ));
+
+            } catch (IOException e) {
+                ctx.status(500);
+                ctx.result(
+                        "Error reading book content: " + e.getMessage()
+                );
             }
         });
 

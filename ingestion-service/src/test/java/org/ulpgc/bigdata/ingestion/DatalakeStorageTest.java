@@ -200,4 +200,77 @@ class DatalakeStorageTest {
         }
     }
 
+    @Test
+    void shouldReadBookUsingBookStrategy() throws IOException {
+
+        DatalakeStorage storage = new DatalakeStorage(
+                tempDir, "by_book"
+        );
+
+        GutenbergClient.BookText original = new GutenbergClient.BookText(
+                "Book header",
+                "Book body"
+        );
+
+        storage.save(1342, original);
+
+        GutenbergClient.BookText result = storage.read(1342);
+
+        assertEquals(original.header(), result.header());
+        assertEquals(original.body(), result.body());
+    }
+
+    @Test
+    void shouldReadBookUsingBatchStrategy() throws IOException {
+
+        DatalakeStorage storage = new DatalakeStorage(
+                tempDir, "by_batch"
+        );
+
+        GutenbergClient.BookText original = new GutenbergClient.BookText(
+                "Batch header",
+                "Batch body"
+        );
+
+        storage.save(1342, original);
+
+        GutenbergClient.BookText result = storage.read(1342);
+
+        assertEquals(original.header(), result.header());
+        assertEquals(original.body(), result.body());
+    }
+
+    @Test
+    void shouldReadBookUsingTimeStrategy() throws IOException {
+
+        DatalakeStorage storage = new DatalakeStorage(
+                tempDir, "by_time"
+        );
+
+        GutenbergClient.BookText original = new GutenbergClient.BookText(
+                "Time header",
+                "Time body"
+        );
+
+        storage.save(1342, original);
+
+        GutenbergClient.BookText result = storage.read(1342);
+
+        assertEquals(original.header(), result.header());
+        assertEquals(original.body(), result.body());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenBookDoesNotExist() {
+
+        DatalakeStorage storage = new DatalakeStorage(
+                tempDir, "by_book"
+        );
+
+        assertThrows(
+                IOException.class,
+                () -> storage.read(1342)
+        );
+    }
+
 }
