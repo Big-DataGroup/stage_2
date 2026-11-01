@@ -7,12 +7,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Clase que gestiona el Índice Invertido en memoria.
+ * Clase que gestiona el Indice Invertido en memoria.
  * Adaptada para Stage 2 (Microservicios): Hilo seguro (Thread-Safe) y desacoplada de I/O.
  */
 public class InvertedIndex {
 
-    // Usamos estructuras concurrentes para soportar múltiples peticiones HTTP simultáneas
+    // Usamos estructuras concurrentes para soportar multiples peticiones HTTP simultaneas
     private final Map<String, Set<Integer>> index;
 
     public InvertedIndex() {
@@ -20,13 +20,13 @@ public class InvertedIndex {
     }
 
     /**
-     * Añade un documento al índice.
+     * Añade un documento al indice.
      * Recibe directamente las palabras procesadas en lugar de leer de disco.
      */
     public void addDocument(int bookId, Set<String> words) {
         for (String word : words) {
             // computeIfAbsent + newKeySet() garantiza concurrencia sin bloqueos
-            // y evita duplicados de forma nativa e instantánea (O(1))
+            // y evita duplicados de forma nativa e instantanea (O(1))
             index.computeIfAbsent(word, k -> ConcurrentHashMap.newKeySet()).add(bookId);
         }
     }
@@ -41,14 +41,14 @@ public class InvertedIndex {
     }
 
     /**
-     * Devuelve el mapa subyacente del índice invertido.
+     * Devuelve el mapa subyacente del indice invertido.
      */
     public Map<String, Set<Integer>> getIndex() {
         return index;
     }
 
     /**
-     * Calcula métricas reales de tamaño en memoria del índice (Puntos 16 y 32).
+     * Calcula metricas reales de tamaño en memoria del indice (Puntos 16 y 32).
      */
     public MemoryFootprint getMemoryFootprint() {
         int totalTerms = index.size();
@@ -58,7 +58,7 @@ public class InvertedIndex {
             totalPostings += postings.size();
         }
 
-        // Estimación aproximada de bytes en memoria
+        // Estimacion aproximada de bytes en memoria
         long estimatedBytes = (totalTerms * 64L) + (totalPostings * 24L);
 
         return new MemoryFootprint(totalTerms, totalPostings, estimatedBytes);
