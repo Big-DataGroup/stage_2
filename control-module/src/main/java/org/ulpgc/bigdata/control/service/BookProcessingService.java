@@ -13,6 +13,7 @@ public class BookProcessingService {
 
     private final IngestionClient ingestionClient;
     private final IndexingClient indexingClient;
+    private final WorkflowStateStore workflowStateStore;
 
     public BookProcessingService(
             IngestionClient ingestionClient,
@@ -20,6 +21,11 @@ public class BookProcessingService {
     ) {
         this.ingestionClient = ingestionClient;
         this.indexingClient = indexingClient;
+        try {
+            this.workflowStateStore = new WorkflowStateStore();
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not initialize workflow state", e);
+        }
     }
 
     public HttpResponse<String> processBook(int bookId)
@@ -30,23 +36,27 @@ public class BookProcessingService {
                     "Book ID must be a positive number"
             );
         }
+        workflowStateStore.mark(bookId, "INGESTING");
 
         // Step 1: Download the book
         HttpResponse<String> ingestionResponse =
                 ingestionClient.ingestBook(bookId);
 
         if (ingestionResponse.statusCode() != 200) {
+            workflowStateStore.mark(bookId, "INGESTION_FAILED");
             throw new RuntimeException(
                     "Ingestion failed with status: "
                             + ingestionResponse.statusCode()
             );
         }
+        workflowStateStore.mark(bookId, "INGESTED");
 
         // Step 2: Retrieve the book content
         HttpResponse<String> contentResponse =
                 ingestionClient.getBookContent(bookId);
 
         if (contentResponse.statusCode() != 200) {
+            workflowStateStore.mark(bookId, "CONTENT_UNAVAILABLE");
             throw new RuntimeException(
                     "Could not retrieve book content. Status: "
                             + contentResponse.statusCode()
@@ -69,11 +79,13 @@ public class BookProcessingService {
                 indexingClient.indexBook(bookId, completeContent);
 
         if (indexingResponse.statusCode() != 200) {
+            workflowStateStore.mark(bookId, "INDEXING_FAILED");
             throw new RuntimeException(
                     "Indexing failed with status: "
                             + indexingResponse.statusCode()
             );
         }
+        workflowStateStore.mark(bookId, "INDEXED");
 
         return indexingResponse;
     }

@@ -31,6 +31,22 @@ public class InvertedIndex {
         }
     }
 
+    public void removeDocument(int bookId, Set<String> words) {
+        for (String word : words) {
+            Set<Integer> postings = index.get(word);
+            if (postings != null) {
+                postings.remove(bookId);
+                if (postings.isEmpty()) {
+                    index.remove(word, postings);
+                }
+            }
+        }
+    }
+
+    public void clear() {
+        index.clear();
+    }
+
     /**
      * Busca los IDs de los libros que contienen la palabra consultada.
      * Devuelve un List para mantener compatibilidad con la firma original del Stage 1.

@@ -2,49 +2,78 @@ package org.ulpgc.bigdata.indexing;
 
 import com.google.gson.Gson;
 import io.javalin.Javalin;
+
+import java.io.IOException;
 import java.util.Map;
 
 public class App {
     public static void main(String[] args) {
-        // 1. Instanciar el núcleo que ya terminaste
         IndexManager indexManager = new IndexManager();
+        int port = Integer.parseInt(System.getenv().getOrDefault("INDEXING_PORT", "7002"));
+
         Gson gson = new Gson();
+        Javalin app = Javalin.create(config -> {
+            config.http.defaultContentType = "application/json";
+            config.jsonMapper(new io.javalin.json.JavalinGson(gson, true));
+        });
 
-        // 2. Levantar el servidor en el puerto acordado (ej. 7002)
-        Javalin app = Javalin.create().start(7002);
+        app.get("/health", ctx -> ctx.json(Map.of(
+                "service", "indexing-service", "status", "running")));
 
-        // ENDPOINT 1: Recibir texto de un libro e indexarlo (POST)
         app.post("/index/update/{book_id}", ctx -> {
             try {
                 int bookId = Integer.parseInt(ctx.pathParam("book_id"));
-                String content = ctx.body();
-
-                if (content == null || content.isBlank()) {
-                    ctx.status(400).result(gson.toJson(Map.of("status", "error", "message", "Body empty")));
-                    return;
-                }
-
-                // Llamamos a tu clase IndexManager para que trabaje
-                indexManager.indexText(bookId, content);
-
-                ctx.status(200).result(gson.toJson(Map.of(
-                        "status", "success",
-                        "book_id", bookId
-                )));
-            } catch (NumberFormatException e) {
-                ctx.status(400).result(gson.toJson(Map.of("status", "error")));
+                indexManager.indexText(bookId, ctx.body());
+                ctx.json(Map.of("status", "updated", "book_id", bookId));
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("error", e.getMessage()));
+            } catch (IOException e) {
+                ctx.status(500).json(Map.of("error", "Could not persist index state"));
             }
         });
 
-        // ENDPOINT 2: Buscar una palabra (GET)
-        app.get("/index/search/{word}", ctx -> {
-            String word = ctx.pathParam("word");
-            var result = indexManager.getIndex().search(word);
-
-            ctx.status(200).result(gson.toJson(Map.of(
-                    "word", word,
-                    "books", result
-            )));
+        app.get("/index/search", ctx -> {
+            String query = ctx.queryParam("q");
+            Integer year = parseInteger(ctx.queryParam("year"));
+            Integer offset = parseInteger(ctx.queryParam("offset"));
+            Integer limit = parseInteger(ctx.queryParam("limit"));
+            if (query == null || query.isBlank()
+                    || (ctx.queryParam("year") != null && year == null)
+                    || (ctx.queryParam("offset") != null && offset == null)
+                    || (ctx.queryParam("limit") != null && limit == null)) {
+                ctx.status(400).json(Map.of("error", "Invalid search parameters"));
+                return;
+            }
+            try {
+                ctx.json(indexManager.search(query, ctx.queryParam("author"),
+                        ctx.queryParam("language"), year,
+                        offset == null ? 0 : offset, limit == null ? 20 : limit));
+            } catch (IllegalArgumentException e) {
+                ctx.status(400).json(Map.of("error", e.getMessage()));
+            }
         });
+
+        app.get("/index/search/{word}", ctx -> ctx.json(
+                indexManager.search(ctx.pathParam("word"), null, null, null, 0, 20)));
+        app.get("/index/status", ctx -> ctx.json(indexManager.status()));
+        app.post("/index/rebuild", ctx -> {
+            try {
+                indexManager.rebuild();
+                ctx.json(Map.of("books_processed", 0, "status", "rebuilt"));
+            } catch (IOException e) {
+                ctx.status(500).json(Map.of("error", "Could not rebuild index"));
+            }
+        });
+
+        app.start(port);
+    }
+
+    private static Integer parseInteger(String value) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Integer.valueOf(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

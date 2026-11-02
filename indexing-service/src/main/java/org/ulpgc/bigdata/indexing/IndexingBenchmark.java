@@ -8,8 +8,8 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 @Fork(1)
-@Warmup(iterations = 2, time = 1)
-@Measurement(iterations = 3, time = 1)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 10, time = 1)
 public class IndexingBenchmark {
 
     private IndexManager indexManager;
@@ -25,7 +25,7 @@ public class IndexingBenchmark {
     }
 
     @Benchmark
-    public void testIndexingSpeed(Blackhole bh) {
+    public void testIndexingSpeed(Blackhole bh) throws java.io.IOException {
         currentBookId++; // Simulamos un libro distinto en cada ejecución
 
         indexManager.indexText(currentBookId, sampleText);

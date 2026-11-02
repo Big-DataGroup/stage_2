@@ -1,6 +1,7 @@
 
 package org.ulpgc.bigdata.control;
 
+import com.google.gson.Gson;
 import io.javalin.Javalin;
 import org.ulpgc.bigdata.control.client.IngestionClient;
 import org.ulpgc.bigdata.control.client.IndexingClient;
@@ -27,7 +28,9 @@ public class App {
                 );
 
         // Create the HTTP server
-        Javalin app = Javalin.create();
+        Gson gson = new Gson();
+        Javalin app = Javalin.create(config ->
+                config.jsonMapper(new io.javalin.json.JavalinGson(gson, true)));
 
         // Health endpoint
         app.get("/health", ctx -> {
@@ -67,6 +70,20 @@ public class App {
                 ctx.result(
                         "Could not process and index the book"
                 );
+            }
+        });
+
+        app.get("/workflow/status/{book_id}", ctx -> {
+            try {
+                int bookId = Integer.parseInt(ctx.pathParam("book_id"));
+                ctx.json(java.util.Map.of(
+                        "book_id", bookId,
+                        "status", new org.ulpgc.bigdata.control.service.WorkflowStateStore()
+                                .state(bookId)));
+            } catch (NumberFormatException e) {
+                ctx.status(400).json(java.util.Map.of("error", "Invalid book ID"));
+            } catch (Exception e) {
+                ctx.status(500).json(java.util.Map.of("error", "Workflow state unavailable"));
             }
         });
 

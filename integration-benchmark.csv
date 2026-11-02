@@ -1,0 +1,5 @@
+"concurrency","requests","elapsed_seconds","throughput_requests_per_second"
+"1","10","0,787","12,709"
+"2","20","0,578","34,605"
+"4","40","0,959","41,703"
+"8","80","1,748","45,771"

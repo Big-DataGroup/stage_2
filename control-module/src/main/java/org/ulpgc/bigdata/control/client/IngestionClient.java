@@ -6,6 +6,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 public class IngestionClient {
 
@@ -15,7 +16,10 @@ public class IngestionClient {
     // Constructor used by the application
     public IngestionClient() {
         this(
-                HttpClient.newHttpClient(),
+                HttpClient.newBuilder()
+                        .connectTimeout(Duration.ofSeconds(
+                                Long.parseLong(System.getenv().getOrDefault("SERVICE_CONNECT_TIMEOUT_SECONDS", "5"))))
+                        .build(),
                 System.getenv().getOrDefault(
                         "INGESTION_SERVICE_URL",
                         "http://localhost:7001"
@@ -35,6 +39,7 @@ public class IngestionClient {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/ingest/" + bookId))
+                .timeout(Duration.ofSeconds(timeoutSeconds()))
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
 
@@ -52,6 +57,7 @@ public class IngestionClient {
                 .uri(URI.create(
                         baseUrl + "/ingest/content/" + bookId
                 ))
+                .timeout(Duration.ofSeconds(timeoutSeconds()))
                 .GET()
                 .build();
 
@@ -59,5 +65,9 @@ public class IngestionClient {
                 request,
                 HttpResponse.BodyHandlers.ofString()
         );
+    }
+
+    private long timeoutSeconds() {
+        return Long.parseLong(System.getenv().getOrDefault("SERVICE_REQUEST_TIMEOUT_SECONDS", "30"));
     }
 }
