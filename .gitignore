@@ -41,3 +41,7 @@ $RECYCLE.BIN/
 # Si necesitáis subir una muestra pequeña para pruebas, podéis forzarlo con 'git add -f'
 datalake/
 datamarts/
+# Archivos locales del proyecto
+/data/
+/ingestion-service/data/
+/ingestion-service/requests.http
