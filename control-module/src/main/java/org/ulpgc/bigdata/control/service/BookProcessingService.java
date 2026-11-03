@@ -36,57 +36,54 @@ public class BookProcessingService {
                     "Book ID must be a positive number"
             );
         }
-        workflowStateStore.mark(bookId, "INGESTING");
+        try {
+            workflowStateStore.mark(bookId, "INGESTING");
 
-        // Step 1: Download the book
-        HttpResponse<String> ingestionResponse =
-                ingestionClient.ingestBook(bookId);
+            HttpResponse<String> ingestionResponse =
+                    ingestionClient.ingestBook(bookId);
+            if (ingestionResponse.statusCode() != 200) {
+                throw new RuntimeException(
+                        "Ingestion failed with status: "
+                                + ingestionResponse.statusCode());
+            }
+            workflowStateStore.mark(bookId, "INGESTED");
 
-        if (ingestionResponse.statusCode() != 200) {
-            workflowStateStore.mark(bookId, "INGESTION_FAILED");
-            throw new RuntimeException(
-                    "Ingestion failed with status: "
-                            + ingestionResponse.statusCode()
-            );
+            HttpResponse<String> contentResponse =
+                    ingestionClient.getBookContent(bookId);
+            if (contentResponse.statusCode() != 200) {
+                throw new RuntimeException(
+                        "Could not retrieve book content. Status: "
+                                + contentResponse.statusCode());
+            }
+
+            JsonObject bookContent = JsonParser.parseString(
+                    contentResponse.body()).getAsJsonObject();
+            String header = bookContent.get("header").getAsString();
+            String body = bookContent.get("body").getAsString();
+            String completeContent = header + "\n" + body;
+
+            HttpResponse<String> indexingResponse =
+                    indexingClient.indexBook(bookId, completeContent);
+            if (indexingResponse.statusCode() != 200) {
+                throw new RuntimeException(
+                        "Indexing failed with status: "
+                                + indexingResponse.statusCode());
+            }
+            workflowStateStore.mark(bookId, "INDEXED");
+            return indexingResponse;
+        } catch (IOException | InterruptedException | RuntimeException e) {
+            try {
+                workflowStateStore.mark(bookId, failureState(e));
+            } catch (IOException stateError) {
+                e.addSuppressed(stateError);
+            }
+            throw e;
         }
-        workflowStateStore.mark(bookId, "INGESTED");
+    }
 
-        // Step 2: Retrieve the book content
-        HttpResponse<String> contentResponse =
-                ingestionClient.getBookContent(bookId);
-
-        if (contentResponse.statusCode() != 200) {
-            workflowStateStore.mark(bookId, "CONTENT_UNAVAILABLE");
-            throw new RuntimeException(
-                    "Could not retrieve book content. Status: "
-                            + contentResponse.statusCode()
-            );
-        }
-
-        // Parse the JSON response
-        JsonObject bookContent = JsonParser.parseString(
-                contentResponse.body()
-        ).getAsJsonObject();
-
-        String header = bookContent.get("header").getAsString();
-        String body = bookContent.get("body").getAsString();
-
-        // Combine header and body
-        String completeContent = header + "\n" + body;
-
-        // Step 3: Send the content to Indexing Service
-        HttpResponse<String> indexingResponse =
-                indexingClient.indexBook(bookId, completeContent);
-
-        if (indexingResponse.statusCode() != 200) {
-            workflowStateStore.mark(bookId, "INDEXING_FAILED");
-            throw new RuntimeException(
-                    "Indexing failed with status: "
-                            + indexingResponse.statusCode()
-            );
-        }
-        workflowStateStore.mark(bookId, "INDEXED");
-
-        return indexingResponse;
+    private String failureState(Exception error) {
+        String message = error.getMessage();
+        if (message == null || message.isBlank()) return "FAILED";
+        return "FAILED: " + message;
     }
 }

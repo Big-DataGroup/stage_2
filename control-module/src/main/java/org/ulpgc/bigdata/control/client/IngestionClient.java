@@ -43,10 +43,7 @@ public class IngestionClient {
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
 
-        return httpClient.send(
-                request,
-                HttpResponse.BodyHandlers.ofString()
-        );
+        return sendWithRetry(request);
     }
 
     // GET: Retrieve book content
@@ -61,13 +58,26 @@ public class IngestionClient {
                 .GET()
                 .build();
 
-        return httpClient.send(
-                request,
-                HttpResponse.BodyHandlers.ofString()
-        );
+        return sendWithRetry(request);
     }
 
     private long timeoutSeconds() {
         return Long.parseLong(System.getenv().getOrDefault("SERVICE_REQUEST_TIMEOUT_SECONDS", "30"));
+    }
+
+    private HttpResponse<String> sendWithRetry(HttpRequest request)
+            throws IOException, InterruptedException {
+        int attempts = Math.max(1, Integer.parseInt(System.getenv()
+                .getOrDefault("SERVICE_MAX_ATTEMPTS", "3")));
+        IOException lastError = null;
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            try {
+                return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (IOException e) {
+                lastError = e;
+                if (attempt < attempts) Thread.sleep(100L * attempt);
+            }
+        }
+        throw lastError;
     }
 }

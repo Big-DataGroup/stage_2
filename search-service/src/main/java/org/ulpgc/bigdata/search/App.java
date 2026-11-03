@@ -26,7 +26,10 @@ public class App {
             if (query == null || query.isBlank()
                     || (ctx.queryParam("year") != null && year == null)
                     || (ctx.queryParam("offset") != null && offset == null)
-                    || (ctx.queryParam("limit") != null && limit == null)) {
+                    || (ctx.queryParam("limit") != null && limit == null)
+                    || (offset != null && offset < 0)
+                    || (limit != null && (limit < 1 || limit > 100))
+                    || (year != null && (year < 1 || year > 3000))) {
                 ctx.status(400).json(Map.of("error", "Invalid search parameters"));
                 return;
             }

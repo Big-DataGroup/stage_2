@@ -42,7 +42,7 @@ public class IndexingClient {
                 .timeout(Duration.ofSeconds(Long.parseLong(
                         System.getenv().getOrDefault("SERVICE_REQUEST_TIMEOUT_SECONDS", "30"))))
                 .GET().build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        return sendWithRetry(request);
     }
 
     public HttpResponse<String> search(String query)
@@ -55,7 +55,7 @@ public class IndexingClient {
                 .timeout(Duration.ofSeconds(Long.parseLong(
                         System.getenv().getOrDefault("SERVICE_REQUEST_TIMEOUT_SECONDS", "30"))))
                 .GET().build();
-        return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        return sendWithRetry(request);
     }
 
     private void append(StringBuilder uri, String name, String value) {
@@ -64,5 +64,21 @@ public class IndexingClient {
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    private HttpResponse<String> sendWithRetry(HttpRequest request)
+            throws IOException, InterruptedException {
+        int attempts = Math.max(1, Integer.parseInt(System.getenv()
+                .getOrDefault("SERVICE_MAX_ATTEMPTS", "3")));
+        IOException lastError = null;
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            try {
+                return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (IOException e) {
+                lastError = e;
+                if (attempt < attempts) Thread.sleep(100L * attempt);
+            }
+        }
+        throw lastError;
     }
 }
