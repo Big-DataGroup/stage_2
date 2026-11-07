@@ -19,7 +19,6 @@ public class IndexingBenchmark {
     @Setup(Level.Iteration)
     public void setUp() {
         indexManager = new IndexManager();
-        // Generamos la misma carga masiva (55.000 palabras)
         sampleText = "Este es un texto de prueba para el sistema de Big Data. ".repeat(5000);
         currentBookId = 0; // Reiniciamos el contador en cada bloque de pruebas
     }
@@ -30,7 +29,6 @@ public class IndexingBenchmark {
 
         indexManager.indexText(currentBookId, sampleText);
 
-        // Obligamos a la JVM a leer el tamaño del índice para que no descarte la operación
         bh.consume(indexManager.getIndex().getIndex().size());
     }
 }

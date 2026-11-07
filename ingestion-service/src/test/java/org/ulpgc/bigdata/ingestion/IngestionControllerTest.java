@@ -158,7 +158,6 @@ class IngestionControllerTest {
     @Test
     void shouldIngestBookSuccessfully() throws Exception {
 
-        // Create a mock Gutenberg client
         GutenbergClient gutenbergClient = mock(GutenbergClient.class);
 
         GutenbergClient.BookText bookText =
@@ -170,7 +169,6 @@ class IngestionControllerTest {
         when(gutenbergClient.download(1342))
                 .thenReturn(bookText);
 
-        // Create storage and repository
         DatalakeStorage storage = new DatalakeStorage(
                 tempDir.resolve("post-datalake"),
                 "by_book"
@@ -180,7 +178,6 @@ class IngestionControllerTest {
                 tempDir.resolve("post-books.json")
         );
 
-        // Create a controller with the mocked client
         IngestionController controller = new IngestionController(
                 gutenbergClient,
                 storage,
@@ -220,10 +217,8 @@ class IngestionControllerTest {
             assertEquals("downloaded", json.get("status").getAsString());
             assertEquals("by_book/1342", json.get("path").getAsString());
 
-            // Verify that the book was stored
             assertTrue(testRepository.isAvailable(1342));
 
-            // Verify that both files were created
             Path bookDirectory = tempDir
                     .resolve("post-datalake")
                     .resolve("by_book")

@@ -108,7 +108,6 @@ class IngestionRepositoryTest {
         IngestionRepository repository =
                 new IngestionRepository(file);
 
-        // Replace the parent directory with a regular file.
         java.nio.file.Files.delete(directory);
         java.nio.file.Files.writeString(directory, "not a directory");
 

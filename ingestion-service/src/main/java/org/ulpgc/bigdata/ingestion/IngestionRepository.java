@@ -56,7 +56,6 @@ public class IngestionRepository {
 
         } catch (IOException e) {
 
-            // Restore the previous in-memory state
             if (previousStatus == null) {
                 books.remove(bookId);
             } else {

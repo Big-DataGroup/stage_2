@@ -11,34 +11,28 @@ public class App {
 
     public static void main(String[] args) {
 
-        // Load the port from environment variables
         int port = Integer.parseInt(
                 System.getenv().getOrDefault("CONTROL_PORT", "7000")
         );
 
-        // Create HTTP clients
         IngestionClient ingestionClient = new IngestionClient();
         IndexingClient indexingClient = new IndexingClient();
 
-        // Create the book processing service
         BookProcessingService bookProcessingService =
                 new BookProcessingService(
                         ingestionClient,
                         indexingClient
                 );
 
-        // Create the HTTP server
         Gson gson = new Gson();
         Javalin app = Javalin.create(config ->
                 config.jsonMapper(new io.javalin.json.JavalinGson(gson, true)));
 
-        // Health endpoint
         app.get("/health", ctx -> {
             ctx.status(200);
             ctx.result("Control Module is running");
         });
 
-        // Process and index a book
         app.post("/books/{book_id}/ingest", ctx -> {
 
             try {
@@ -87,7 +81,6 @@ public class App {
             }
         });
 
-        // Start the server
         app.start(port);
 
         System.out.println(

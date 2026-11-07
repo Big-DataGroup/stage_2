@@ -6,7 +6,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Parent project -->
+
     <parent>
         <groupId>org.ulpgc.bigdata</groupId>
         <artifactId>stage_2_search_engine</artifactId>
@@ -21,7 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <!-- Dependencies -->
+
     <dependencies>
         <dependency>
             <groupId>io.javalin</groupId>
@@ -56,7 +56,7 @@
         </dependency>
     </dependencies>
 
-    <!-- Build configuration -->
+
     <build>
         <plugins>
             <plugin>
@@ -68,7 +68,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Executable JAR with dependencies -->
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
