@@ -1,0 +1,69 @@
+openapi: 3.0.3
+info:
+  title: Search Service API
+  version: 1.0.0
+  description: Public search API for the Stage 2 book index.
+servers:
+  - url: http://localhost:7003
+paths:
+  /health:
+    get:
+      responses:
+        '200':
+          description: Service is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /search:
+    get:
+      parameters:
+        - {name: q, in: query, required: true, schema: {type: string, minLength: 1}}
+        - {name: author, in: query, schema: {type: string}}
+        - {name: language, in: query, schema: {type: string}}
+        - {name: year, in: query, schema: {type: integer, minimum: 1, maximum: 3000}}
+        - {name: offset, in: query, schema: {type: integer, minimum: 0, default: 0}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        '200':
+          description: Search result, possibly empty
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: Invalid query or filter
+        '502':
+          description: Indexing Service unavailable
+        '503':
+          description: Search interrupted
+components:
+  schemas:
+    Health:
+      type: object
+      required: [service, status]
+      properties:
+        service: {type: string, example: search-service}
+        status: {type: string, example: running}
+    SearchResult:
+      type: object
+      required: [query, filters, total, offset, limit, results]
+      properties:
+        query: {type: string}
+        filters: {type: object, additionalProperties: true}
+        total: {type: integer, minimum: 0}
+        offset: {type: integer, minimum: 0}
+        limit: {type: integer, minimum: 1}
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Book'
+    Book:
+      type: object
+      required: [bookId, title, author, language, year]
+      properties:
+        bookId: {type: integer}
+        title: {type: string}
+        author: {type: string}
+        language: {type: string}
+        year: {type: integer}

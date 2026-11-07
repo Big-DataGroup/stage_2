@@ -1,0 +1,90 @@
+
+package org.ulpgc.bigdata.control;
+
+import com.google.gson.Gson;
+import io.javalin.Javalin;
+import org.ulpgc.bigdata.control.client.IngestionClient;
+import org.ulpgc.bigdata.control.client.IndexingClient;
+import org.ulpgc.bigdata.control.service.BookProcessingService;
+
+public class App {
+
+    public static void main(String[] args) {
+
+        int port = Integer.parseInt(
+                System.getenv().getOrDefault("CONTROL_PORT", "7000")
+        );
+
+        IngestionClient ingestionClient = new IngestionClient();
+        IndexingClient indexingClient = new IndexingClient();
+
+        BookProcessingService bookProcessingService =
+                new BookProcessingService(
+                        ingestionClient,
+                        indexingClient
+                );
+
+        Gson gson = new Gson();
+        Javalin app = Javalin.create(config ->
+                config.jsonMapper(new io.javalin.json.JavalinGson(gson, true)));
+
+        app.get("/health", ctx -> {
+            ctx.status(200);
+            ctx.result("Control Module is running");
+        });
+
+        app.post("/books/{book_id}/ingest", ctx -> {
+
+            try {
+                int bookId = Integer.parseInt(
+                        ctx.pathParam("book_id")
+                );
+
+                var response =
+                        bookProcessingService.processBook(bookId);
+
+                ctx.status(response.statusCode());
+                ctx.result(response.body());
+
+            } catch (NumberFormatException e) {
+                ctx.status(400);
+                ctx.result("Invalid book ID");
+
+            } catch (IllegalArgumentException e) {
+                ctx.status(400);
+                ctx.result(e.getMessage());
+
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                ctx.status(500);
+                ctx.result("Request was interrupted");
+
+            } catch (Exception e) {
+                ctx.status(502);
+                ctx.result(
+                        "Could not process and index the book"
+                );
+            }
+        });
+
+        app.get("/workflow/status/{book_id}", ctx -> {
+            try {
+                int bookId = Integer.parseInt(ctx.pathParam("book_id"));
+                ctx.json(java.util.Map.of(
+                        "book_id", bookId,
+                        "status", new org.ulpgc.bigdata.control.service.WorkflowStateStore()
+                                .state(bookId)));
+            } catch (NumberFormatException e) {
+                ctx.status(400).json(java.util.Map.of("error", "Invalid book ID"));
+            } catch (Exception e) {
+                ctx.status(500).json(java.util.Map.of("error", "Workflow state unavailable"));
+            }
+        });
+
+        app.start(port);
+
+        System.out.println(
+                "Control Module running on port " + port
+        );
+    }
+}
