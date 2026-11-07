@@ -27,7 +27,6 @@ public class IngestionController {
 
     public void registerRoutes(Javalin app) {
 
-        // POST: Ingest a book
         app.post("/ingest/{book_id}", ctx -> {
 
             int bookId;
@@ -89,7 +88,6 @@ public class IngestionController {
             }
         });
 
-        // GET: Check book availability
         app.get("/ingest/status/{book_id}", ctx -> {
 
             int bookId;
@@ -121,7 +119,6 @@ public class IngestionController {
             ));
         });
 
-        // GET: Retrieve book content
         app.get("/ingest/content/{book_id}", ctx -> {
 
             int bookId;
@@ -161,7 +158,6 @@ public class IngestionController {
             }
         });
 
-        // GET: List ingested books
         app.get("/ingest/list", ctx -> {
 
             List<Integer> books = new ArrayList<>(

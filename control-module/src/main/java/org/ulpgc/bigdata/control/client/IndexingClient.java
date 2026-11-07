@@ -13,7 +13,6 @@ public class IndexingClient {
     private final HttpClient httpClient;
     private final String baseUrl;
 
-    // Constructor used by the application
     public IndexingClient() {
         this(
                 HttpClient.newBuilder()
@@ -27,13 +26,11 @@ public class IndexingClient {
         );
     }
 
-    // Constructor used for testing
     public IndexingClient(HttpClient httpClient, String baseUrl) {
         this.httpClient = httpClient;
         this.baseUrl = baseUrl;
     }
 
-    // POST: Send book content to Indexing Service
     public HttpResponse<String> indexBook(
             int bookId,
             String content

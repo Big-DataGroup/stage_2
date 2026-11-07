@@ -31,7 +31,6 @@ class BookProcessingServiceTest {
     @Test
     void shouldProcessBookSuccessfully() throws Exception {
 
-        // Arrange
         HttpResponse<String> ingestionResponse = mock(HttpResponse.class);
         HttpResponse<String> contentResponse = mock(HttpResponse.class);
         HttpResponse<String> indexingResponse = mock(HttpResponse.class);
@@ -56,11 +55,9 @@ class BookProcessingServiceTest {
                 "Book header\nBook body"
         )).thenReturn(indexingResponse);
 
-        // Act
         HttpResponse<String> result =
                 bookProcessingService.processBook(1342);
 
-        // Assert
         assertSame(indexingResponse, result);
 
         verify(ingestionClient).ingestBook(1342);
@@ -75,7 +72,6 @@ class BookProcessingServiceTest {
     @Test
     void shouldRejectInvalidBookId() {
 
-        // Act + Assert
         assertThrows(
                 IllegalArgumentException.class,
                 () -> bookProcessingService.processBook(-5)
@@ -87,7 +83,6 @@ class BookProcessingServiceTest {
     @Test
     void shouldStopWhenIngestionFails() throws Exception {
 
-        // Arrange
         HttpResponse<String> failedResponse = mock(HttpResponse.class);
 
         when(failedResponse.statusCode()).thenReturn(404);
@@ -95,7 +90,6 @@ class BookProcessingServiceTest {
         when(ingestionClient.ingestBook(1342))
                 .thenReturn(failedResponse);
 
-        // Act + Assert
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
                 () -> bookProcessingService.processBook(1342)
@@ -114,7 +108,6 @@ class BookProcessingServiceTest {
     @Test
     void shouldStopWhenContentRetrievalFails() throws Exception {
 
-        // Arrange
         HttpResponse<String> ingestionResponse = mock(HttpResponse.class);
         HttpResponse<String> failedContentResponse = mock(HttpResponse.class);
 
@@ -127,7 +120,6 @@ class BookProcessingServiceTest {
         when(ingestionClient.getBookContent(1342))
                 .thenReturn(failedContentResponse);
 
-        // Act + Assert
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
                 () -> bookProcessingService.processBook(1342)
@@ -144,7 +136,6 @@ class BookProcessingServiceTest {
     @Test
     void shouldStopWhenIndexingFails() throws Exception {
 
-        // Arrange
         HttpResponse<String> ingestionResponse = mock(HttpResponse.class);
         HttpResponse<String> contentResponse = mock(HttpResponse.class);
         HttpResponse<String> failedIndexingResponse = mock(HttpResponse.class);
@@ -167,7 +158,6 @@ class BookProcessingServiceTest {
         when(indexingClient.indexBook(1342, "Header\nBody"))
                 .thenReturn(failedIndexingResponse);
 
-        // Act + Assert
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
                 () -> bookProcessingService.processBook(1342)

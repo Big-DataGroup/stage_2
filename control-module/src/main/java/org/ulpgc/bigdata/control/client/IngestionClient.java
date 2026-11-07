@@ -13,7 +13,6 @@ public class IngestionClient {
     private final HttpClient httpClient;
     private final String baseUrl;
 
-    // Constructor used by the application
     public IngestionClient() {
         this(
                 HttpClient.newBuilder()
@@ -27,13 +26,11 @@ public class IngestionClient {
         );
     }
 
-    // Constructor used for testing
     public IngestionClient(HttpClient httpClient, String baseUrl) {
         this.httpClient = httpClient;
         this.baseUrl = baseUrl;
     }
 
-    // POST: Request book ingestion
     public HttpResponse<String> ingestBook(int bookId)
             throws IOException, InterruptedException {
 
@@ -46,7 +43,6 @@ public class IngestionClient {
         return sendWithRetry(request);
     }
 
-    // GET: Retrieve book content
     public HttpResponse<String> getBookContent(int bookId)
             throws IOException, InterruptedException {
 

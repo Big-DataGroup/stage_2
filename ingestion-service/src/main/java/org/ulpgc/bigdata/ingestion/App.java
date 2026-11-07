@@ -11,7 +11,6 @@ public class App {
 
     public static void main(String[] args) throws IOException {
 
-        // Load configuration from environment variables
         int port = Integer.parseInt(
                 System.getenv().getOrDefault("INGESTION_PORT", "7001")
         );
@@ -31,7 +30,6 @@ public class App {
                 "data/ingestion/ingested_books.json"
         );
 
-        // Create the components
         GutenbergClient gutenbergClient = new GutenbergClient();
 
         DatalakeStorage storage = new DatalakeStorage(
@@ -43,7 +41,6 @@ public class App {
                 Path.of(repositoryPath)
         );
 
-        // Create the HTTP server
         Gson gson = new Gson();
 
         Javalin app = Javalin.create(config -> {
@@ -52,13 +49,11 @@ public class App {
             );
         });
 
-        // Register the health endpoint
         app.get("/health", ctx -> {
             ctx.status(200);
             ctx.result("Ingestion Service is running");
         });
 
-        // Register ingestion endpoints
         IngestionController controller = new IngestionController(
                 gutenbergClient,
                 storage,
@@ -67,7 +62,6 @@ public class App {
 
         controller.registerRoutes(app);
 
-        // Start the server
         app.start(port);
 
         System.out.println(

@@ -48,7 +48,6 @@ public class GutenbergClient {
                 HttpResponse.BodyHandlers.ofString()
         );
 
-        // The book does not exist
         if (response.statusCode() == 404) {
             throw new BookNotFoundException(
                     "Book " + bookId
@@ -56,7 +55,6 @@ public class GutenbergClient {
             );
         }
 
-        // Gutenberg returned an unexpected HTTP error
         if (response.statusCode() != 200) {
             throw new GutenbergRequestException(
                     "Project Gutenberg returned HTTP "

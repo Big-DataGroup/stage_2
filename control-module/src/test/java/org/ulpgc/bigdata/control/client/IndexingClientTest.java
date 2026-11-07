@@ -17,7 +17,6 @@ class IndexingClientTest {
     void shouldSendPostRequestWithBookContent()
             throws Exception {
 
-        // Arrange
         HttpClient httpClient = mock(HttpClient.class);
         HttpResponse<String> expectedResponse = mock(HttpResponse.class);
 
@@ -34,11 +33,9 @@ class IndexingClientTest {
                         "http://localhost:7002"
                 );
 
-        // Act
         HttpResponse<String> actualResponse =
                 indexingClient.indexBook(1342, content);
 
-        // Assert
         assertSame(expectedResponse, actualResponse);
 
         verify(httpClient).send(
@@ -60,7 +57,6 @@ class IndexingClientTest {
     void shouldSendTheCorrectBookContent()
             throws Exception {
 
-        // Arrange
         HttpClient httpClient = mock(HttpClient.class);
         HttpResponse<String> expectedResponse = mock(HttpResponse.class);
 
@@ -77,10 +73,8 @@ class IndexingClientTest {
                         "http://localhost:7002"
                 );
 
-        // Act
         indexingClient.indexBook(1342, content);
 
-        // Assert
         verify(httpClient).send(
                 argThat(request ->
                         request.bodyPublisher().isPresent()
