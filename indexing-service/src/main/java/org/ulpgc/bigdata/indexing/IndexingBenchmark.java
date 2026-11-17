@@ -2,6 +2,11 @@ package org.ulpgc.bigdata.indexing;
 
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
+
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -26,9 +31,16 @@ public class IndexingBenchmark {
     @Benchmark
     public void testIndexingSpeed(Blackhole bh) throws java.io.IOException {
         currentBookId++;
-
         indexManager.indexText(currentBookId, sampleText);
-
         bh.consume(indexManager.getIndex().getIndex().size());
+    }
+
+    public static void main(String[] args) throws RunnerException {
+        Options opt = new OptionsBuilder()
+                .include(IndexingBenchmark.class.getSimpleName())
+                .forks(1)
+                .build();
+
+        new Runner(opt).run();
     }
 }
