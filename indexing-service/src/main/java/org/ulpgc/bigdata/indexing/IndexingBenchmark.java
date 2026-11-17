@@ -20,12 +20,12 @@ public class IndexingBenchmark {
     public void setUp() {
         indexManager = new IndexManager();
         sampleText = "Este es un texto de prueba para el sistema de Big Data. ".repeat(5000);
-        currentBookId = 0; // Reiniciamos el contador en cada bloque de pruebas
+        currentBookId = 0;
     }
 
     @Benchmark
     public void testIndexingSpeed(Blackhole bh) throws java.io.IOException {
-        currentBookId++; // Simulamos un libro distinto en cada ejecución
+        currentBookId++;
 
         indexManager.indexText(currentBookId, sampleText);
 
